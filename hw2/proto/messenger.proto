@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package proto;
+
+service messenger {
+  rpc enter (str) returns (str) {}
+  rpc send (text) returns (ack) {}
+  rpc receive (str) returns (text) {}
+}
+
+message text {
+  message mail {
+    string from = 1;
+    string to = 2;
+    string msg = 3;
+  }
+  mail msg = 1;
+}
+
+message str {
+  string noti = 1;
+}
+
+message ack {
+  bool done = 1;
+}
