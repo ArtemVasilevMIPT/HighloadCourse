@@ -1,4 +1,4 @@
-package email
+package main
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ func failOnError(err error, msg string) {
 func main() {
 
 	viper.SetConfigName("emailConf")
-	viper.AddConfigPath("../../config")
+	viper.AddConfigPath("config")
 	viper.SetConfigType("yml")
 	if err := viper.ReadInConfig(); err != nil {
 		fmt.Printf("Error reading config file, %s", err)
@@ -60,6 +60,7 @@ func main() {
 	var forever chan struct{}
 	go func() {
 		for d := range msgs {
+			fmt.Printf("Received message\n")
 			msg := string(d.Body)
 			splits := strings.SplitN(msg, ":", 2)
 			addr := splits[0]
@@ -69,7 +70,7 @@ func main() {
 			er := smtp.SendMail(configuration.SMTP_HOSTNAME+":"+configuration.SMTP_PORT, auth,
 				configuration.SMTP_USERNAME, []string{addr}, text)
 			if er != nil {
-				fmt.Printf("%v\n", err)
+				fmt.Printf("%v\n", er)
 				panic(err)
 			}
 		}

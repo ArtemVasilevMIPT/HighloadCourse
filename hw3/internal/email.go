@@ -15,7 +15,7 @@ func failOnError(err error, msg string) {
 }
 
 func SendRegistrationEmail(addr string, token string) {
-	URL := "localhost:8080/confirm-register?jwt=" + token
+	URL := "localhost:8080/api/confirm-register?jwt=" + token
 	mail := "To confirm your registration, please, follow this link:\n" + URL
 	QueueToSend(addr, mail)
 }

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="../static/login.css" media="screen" />
+  <title>Sign In</title>
+</head>
+<body>
+<div class="user">
+  <header class="user__header">
+    <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/3219/logo.svg" alt="" />
+    <h1 class="user__title">Sign In</h1>
+  </header>
+
+  <form class="form">
+    <div class="form__group">
+      <input type="text" placeholder="Username" class="form__input" name="username" />
+    </div>
+
+    <div class="form__group">
+      <input type="password" placeholder="Password" class="form__input" name="password" />
+    </div>
+
+    <button class="btn" type="submit">Sign In</button>
+  </form>
+  <script>
+    const form   = document.forms[0]
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault()
+      const formData = new FormData(form);
+      // Convert formData object to URL-encoded string:
+      const payload = new URLSearchParams(formData);
+      fetch('http://localhost:8080/api/login', {
+        method: 'POST',
+        body: payload,
+      })
+              .then(res => {
+                if (res.status !== 200) {
+                  console.log('Looks like there was a problem. Status Code: ' +
+                          res.status);
+                  form.classList.add('form--no')
+                  return;
+                }
+                let auth = res.headers["Authorization"].split(' ')[1]
+                document.cookie = "jwt=" + auth
+                window.location.replace('http://localhost:8080/protected')
+              })
+              .then(() => console.log("Submitted"))
+    })
+  </script>
+</div>
+</body>
+</html>

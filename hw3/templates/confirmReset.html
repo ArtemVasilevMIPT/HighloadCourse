@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" type="text/css" href="../static/reset.css" media="screen" />
+  <title>Reset Password</title>
+</head>
+<body>
+<div class="user">
+  <header class="user__header">
+    <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/3219/logo.svg" alt="" />
+    <h1 class="user__title">Reset Password</h1>
+  </header>
+
+  <form class="form">
+    <div class="form__group">
+      <input type="password" placeholder="Password" class="form__input" />
+    </div>
+
+    <div class="form__group">
+      <input type="password" placeholder="Confirm Password" class="form__input" />
+    </div>
+
+    <button class="btn" type="button">Reset</button>
+  </form>
+  <script>
+    const form   = document.forms[0]
+
+    function GetURLParameter(sParam)
+    {
+      let sPageURL = window.location.search.substring(1);
+      let sURLVariables = sPageURL.split('&');
+      for (let i = 0; i < sURLVariables.length; i++)
+      {
+        let sParameterName = sURLVariables[i].split('=');
+        if (sParameterName[0] == sParam)
+        {
+          return sParameterName[1];
+        }
+      }
+    }?
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault()
+      const formData = new FormData(form);
+      // Convert formData object to URL-encoded string:
+      const payload = new URLSearchParams(formData);
+      let token = GetURLParameter('jwt')
+      fetch('http://localhost:8080/api/confirm-reset?jwt=' + token, {
+        method: 'POST',
+        body: payload,
+      })
+              .then(res => {
+                if (res.status !== 200) {
+                  console.log('Looks like there was a problem. Status Code: ' +
+                          res.status);
+                  form.classList.add('form--no')
+                  return;
+                }
+                window.location.replace('http://localhost:8080/login')
+              })
+              .then(() => console.log("Submitted"))
+    })
+  </script>
+</div>
+</body>
+</html>
