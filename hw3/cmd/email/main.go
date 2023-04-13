@@ -1,11 +1,14 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/spf13/viper"
 	"hw3/config"
 	"log"
+	"net/mail"
+	"net/smtp"
 	"strings"
 )
 
@@ -63,8 +66,7 @@ func main() {
 			msg := string(d.Body)
 			splits := strings.SplitN(msg, ":", 2)
 			addr := splits[0]
-			//text := []byte(splits[1])
-			fmt.Printf("%s\n%s\n", addr, splits[1])
+			text := splits[1]
 			/*
 				auth := smtp.PlainAuth("", configuration.SMTP_USERNAME, configuration.SMTP_PASSWORD, configuration.SMTP_HOSTNAME)
 				er := smtp.SendMail(configuration.SMTP_HOSTNAME+":"+configuration.SMTP_PORT, auth,
@@ -74,6 +76,46 @@ func main() {
 					panic(err)
 				}
 			*/
+			servername := configuration.SMTP_HOSTNAME + ":" + configuration.SMTP_PORT
+			message := fmt.Sprintf("From: %s\r\nTo: %s\r\n\r\n%s\n", configuration.SMTP_USERNAME, addr, text)
+			//fmt.Printf("Message:\n%s\n", message)
+			auth := smtp.PlainAuth("", configuration.SMTP_USERNAME, configuration.SMTP_PASSWORD, configuration.SMTP_HOSTNAME)
+			tlsconfig := &tls.Config{
+				InsecureSkipVerify: true,
+				ServerName:         configuration.SMTP_HOSTNAME,
+			}
+			con, er := tls.Dial("tcp", servername, tlsconfig)
+			if er != nil {
+				log.Panic(er)
+			}
+			c, er := smtp.NewClient(con, configuration.SMTP_HOSTNAME)
+			if er != nil {
+				log.Panic(er)
+			}
+			if er = c.Auth(auth); er != nil {
+				log.Panic(er)
+			}
+			from := mail.Address{Address: configuration.SMTP_USERNAME}
+			to := mail.Address{Address: addr}
+			if er = c.Mail(from.Address); er != nil {
+				log.Panic(er)
+			}
+			if er = c.Rcpt(to.Address); er != nil {
+				log.Panic(er)
+			}
+			w, er := c.Data()
+			if er != nil {
+				log.Panic(er)
+			}
+			_, er = w.Write([]byte(message))
+			if er != nil {
+				log.Panic(er)
+			}
+			er = w.Close()
+			if er != nil {
+				log.Panic(er)
+			}
+			c.Quit()
 		}
 	}()
 
