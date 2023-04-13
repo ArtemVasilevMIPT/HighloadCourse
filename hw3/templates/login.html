@@ -8,7 +8,6 @@
 <body>
 <div class="user">
   <header class="user__header">
-    <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/3219/logo.svg" alt="" />
     <h1 class="user__title">Sign In</h1>
   </header>
 
@@ -42,7 +41,9 @@
                   form.classList.add('form--no')
                   return;
                 }
-                let auth = res.headers["Authorization"].split(' ')[1]
+                console.log(res.headers)
+                let auth = res.headers.get("authorization").split(' ')[1]
+                console.log(auth)
                 document.cookie = "jwt=" + auth
                 window.location.replace('http://localhost:8080/protected')
               })

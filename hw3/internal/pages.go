@@ -23,7 +23,7 @@ func InitTemplates() {
 	regHtml := assets.MustAssetString("templates/registration.html")
 	RegistrationTpl = template.Must(template.New("registration_view").Parse(regHtml))
 
-	resetHtml := assets.MustAssetString("templates/login.html")
+	resetHtml := assets.MustAssetString("templates/reset.html")
 	ResetTpl = template.Must(template.New("reset_view").Parse(resetHtml))
 
 	confirmResetHtml := assets.MustAssetString("templates/confirmReset.html")

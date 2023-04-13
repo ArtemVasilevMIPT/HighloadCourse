@@ -6,7 +6,6 @@ import (
 	"github.com/spf13/viper"
 	"hw3/config"
 	"log"
-	"net/smtp"
 	"strings"
 )
 
@@ -64,15 +63,17 @@ func main() {
 			msg := string(d.Body)
 			splits := strings.SplitN(msg, ":", 2)
 			addr := splits[0]
-			text := []byte(splits[1])
-
-			auth := smtp.PlainAuth("", configuration.SMTP_USERNAME, configuration.SMTP_PASSWORD, configuration.SMTP_HOSTNAME)
-			er := smtp.SendMail(configuration.SMTP_HOSTNAME+":"+configuration.SMTP_PORT, auth,
-				configuration.SMTP_USERNAME, []string{addr}, text)
-			if er != nil {
-				fmt.Printf("%v\n", er)
-				panic(err)
-			}
+			//text := []byte(splits[1])
+			fmt.Printf("%s\n%s\n", addr, splits[1])
+			/*
+				auth := smtp.PlainAuth("", configuration.SMTP_USERNAME, configuration.SMTP_PASSWORD, configuration.SMTP_HOSTNAME)
+				er := smtp.SendMail(configuration.SMTP_HOSTNAME+":"+configuration.SMTP_PORT, auth,
+					configuration.SMTP_USERNAME, []string{addr}, text)
+				if er != nil {
+					fmt.Printf("%v\n", er)
+					panic(err)
+				}
+			*/
 		}
 	}()
 

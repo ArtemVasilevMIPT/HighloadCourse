@@ -60,20 +60,19 @@ var _templatesConfirmresetHtml = []byte(`<!DOCTYPE html>
 <body>
 <div class="user">
   <header class="user__header">
-    <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/3219/logo.svg" alt="" />
     <h1 class="user__title">Reset Password</h1>
   </header>
 
   <form class="form">
     <div class="form__group">
-      <input type="password" placeholder="Password" class="form__input" />
+      <input type="password" placeholder="Password" class="form__input" name="password"/>
     </div>
 
     <div class="form__group">
       <input type="password" placeholder="Confirm Password" class="form__input" />
     </div>
 
-    <button class="btn" type="button">Reset</button>
+    <button class="btn" type="submit">Reset</button>
   </form>
   <script>
     const form   = document.forms[0]
@@ -85,12 +84,12 @@ var _templatesConfirmresetHtml = []byte(`<!DOCTYPE html>
       for (let i = 0; i < sURLVariables.length; i++)
       {
         let sParameterName = sURLVariables[i].split('=');
-        if (sParameterName[0] == sParam)
+        if (sParameterName[0] === sParam)
         {
           return sParameterName[1];
         }
       }
-    }?
+    }
 
     form.addEventListener('submit', function(e) {
       e.preventDefault()
@@ -143,7 +142,6 @@ var _templatesLoginHtml = []byte(`<!DOCTYPE html>
 <body>
 <div class="user">
   <header class="user__header">
-    <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/3219/logo.svg" alt="" />
     <h1 class="user__title">Sign In</h1>
   </header>
 
@@ -177,7 +175,9 @@ var _templatesLoginHtml = []byte(`<!DOCTYPE html>
                   form.classList.add('form--no')
                   return;
                 }
-                let auth = res.headers["Authorization"].split(' ')[1]
+                console.log(res.headers)
+                let auth = res.headers.get("authorization").split(' ')[1]
+                console.log(auth)
                 document.cookie = "jwt=" + auth
                 window.location.replace('http://localhost:8080/protected')
               })
@@ -213,7 +213,6 @@ var _templatesRegistrationHtml = []byte(`<!DOCTYPE html>
 <body>
 <div class="user" id="main">
     <header class="user__header">
-        <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/3219/logo.svg" alt="" />
         <h1 class="user__title">Sign Up</h1>
     </header>
 
@@ -288,17 +287,16 @@ var _templatesResetHtml = []byte(`<!DOCTYPE html>
 <body>
 <div class="user">
     <header class="user__header">
-        <img src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/3219/logo.svg" alt="" />
         <h1 class="user__title">Reset Password</h1>
     </header>
 
     <form class="form" id="main">
 
         <div class="form__group">
-            <input type="email" placeholder="Email" class="form__input" />
+            <input type="text" placeholder="Username" class="form__input" name="username" />
         </div>
 
-        <button class="btn" type="submit">Reset</button>
+        <button class="btn" type="submit" id="btn">Reset</button>
     </form>
     <script>
         const form   = document.forms[0]

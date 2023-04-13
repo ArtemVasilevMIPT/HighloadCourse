@@ -10,7 +10,7 @@ import (
 )
 
 var TokenAuth *jwtauth.JWTAuth
-var ExpirationDuration = 2 * time.Minute
+var ExpirationDuration = 2 * time.Hour
 
 func InitAuth() {
 	TokenAuth = jwtauth.New("HS256", []byte("secret"), nil)
@@ -29,6 +29,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "All form fields should be filled", http.StatusBadRequest)
 		return
 	}
+	//fmt.Printf("New User:\nEmail: %s\nUsername: %s\nPassword: %s\n", email, username, password)
 	// check if email/username exists
 	err = Db.QueryRow("SELECT Username FROM Users WHERE Username = ? OR Email = ?", username, email).Scan()
 	if err == nil || err != sql.ErrNoRows {
@@ -51,8 +52,6 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 	//
 	SendRegistrationEmail(email, tokenString)
-	// TODO redirect
-	//
 }
 
 func ConfirmRegistration(w http.ResponseWriter, r *http.Request) {
@@ -62,33 +61,29 @@ func ConfirmRegistration(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid token", http.StatusUnauthorized)
 		return
 	}
-	emailInter, ok := token.Get("email")
-	expInter, ok2 := token.Get(jwt.ExpirationKey)
-	if !ok || !ok2 {
+	userInter, ok := token.Get("username")
+	if !ok {
 		http.Error(w, "Invalid token", http.StatusUnauthorized)
 		return
 	}
-	email := emailInter.(string)
 	var (
+		email    string
 		username string
 		password string
 		tokenDb  string
 	)
-	err = Db.QueryRow("SELECT * FROM Verification WHERE Email = ?", email).Scan(&email, &username, &password, &tokenDb)
+	err = Db.QueryRow("SELECT * FROM Verification WHERE Username = ?", userInter.(string)).Scan(&email, &username, &password, &tokenDb)
 	if err != nil {
 		fmt.Printf("Couldn't get user %s from verification database\n", email)
 		http.Error(w, "Couldn't get data from database", http.StatusInternalServerError)
 		return
 	}
-	if tokenDb != tokenString {
-		http.Error(w, "Invalid token", http.StatusUnauthorized)
-		return
-	}
-	expiration := expInter.(time.Time)
-	if time.Now().Before(expiration) {
-		http.Error(w, "Token has expired", http.StatusUnauthorized)
-		return
-	}
+	/*
+		if tokenDb != tokenString {
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
+	*/
 	_, err = Db.Exec("INSERT OR FAIL INTO Users (Username, Email, Password) VALUES (?, ?, ?)", username, email, password)
 	if err != nil {
 		fmt.Printf("Couldn't add user (%s, %s) to users database\n", username, email)
@@ -101,8 +96,6 @@ func ConfirmRegistration(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Couldn't update database", http.StatusInternalServerError)
 		return
 	}
-	// TODO redirect to login page
-	//
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
@@ -130,7 +123,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, tokenString, _ := TokenAuth.Encode(map[string]interface{}{"username": usernameForm, jwt.ExpirationKey: time.Now().Add(ExpirationDuration)})
+	token, tokenString, _ := TokenAuth.Encode(map[string]interface{}{"username": usernameForm, jwt.ExpirationKey: time.Now().Add(ExpirationDuration)})
+	fmt.Printf("Produced token:\nValue: %+v\nString: %+v\n", token, tokenString)
 	_, err = Db.Exec("UPDATE Users SET Token = ? WHERE Username = ?", tokenString, usernameForm)
 	if err != nil {
 		fmt.Printf("Couldn't update token for user %s\n", usernameForm)
@@ -221,17 +215,20 @@ func UserAuthenticator(next http.Handler) http.Handler {
 		token, _, err := jwtauth.FromContext(r.Context())
 
 		if err != nil {
+			fmt.Printf("Failed to get token from context\n")
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
 
 		if token == nil || jwt.Validate(token) != nil {
+			fmt.Printf("Failed to validate token\n")
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
 
 		username, ok := token.Get("username")
 		if !ok {
+			fmt.Printf("Invalid token format\n")
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
@@ -242,17 +239,22 @@ func UserAuthenticator(next http.Handler) http.Handler {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
-		tokenDb, err := TokenAuth.Decode(tokenDbString)
-		if err != nil {
-			fmt.Printf("Failed to decode token\n")
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
-		}
-		if token != tokenDb {
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
-		}
-
+		/*
+			tokenDb, err := TokenAuth.Decode(tokenDbString)
+			if err != nil {
+				fmt.Printf("Failed to decode token\n")
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				return
+			}
+		*/
+		//fmt.Printf("Comparing tokens:\nCookie: %+v\nDb string: %+v\nDb: %+v\n", token, tokenDbString, tokenDb)
+		/*
+			if token != tokenDb {
+				fmt.Printf("Tokens don't match\n")
+				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				return
+			}
+		*/
 		next.ServeHTTP(w, r)
 	})
 }
@@ -262,17 +264,20 @@ func VerificationAuthenticator(next http.Handler) http.Handler {
 		token, _, err := jwtauth.FromContext(r.Context())
 
 		if err != nil {
+			fmt.Printf("Couldn't get token from context\n")
 			http.Error(w, err.Error(), http.StatusUnauthorized)
 			return
 		}
 
 		if token == nil || jwt.Validate(token) != nil {
+			fmt.Printf("Couldn't validate token\n")
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
 
 		username, ok := token.Get("username")
 		if !ok {
+			fmt.Printf("Couldn't get username from token\n")
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
@@ -283,13 +288,10 @@ func VerificationAuthenticator(next http.Handler) http.Handler {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
-		tokenDb, err := TokenAuth.Decode(tokenDbString)
-		if err != nil {
-			fmt.Printf("Failed to decode token\n")
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return
-		}
-		if token != tokenDb {
+		//fmt.Println(tokenDbString)
+		tokenString := r.URL.Query().Get("jwt")
+		if tokenDbString != tokenString {
+			fmt.Printf("Tokens don't match\n")
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
