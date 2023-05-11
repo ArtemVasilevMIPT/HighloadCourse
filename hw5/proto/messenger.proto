@@ -1,0 +1,32 @@
+syntax ="proto3";
+
+package proto;
+option go_package = "hw5/proto/messenger";
+
+service Messenger {
+  rpc Enter(User) returns (stream Mail) {}
+  rpc Leave(User) returns (Ack) {}
+  rpc Send(stream Mail) returns (Ack) {}
+  rpc SendSecret(stream SecretMail) returns (Ack) {}
+  rpc Receive(User) returns (stream Mail) {}
+}
+
+message User {
+  string Username = 1;
+}
+
+message Mail {
+  string From = 1;
+  string To = 2;
+  string Msg = 3;
+  int64 Time = 4;
+}
+
+message SecretMail {
+  Mail Content = 1;
+  int64 Duration = 2;
+}
+
+message Ack {
+  bool Done = 1;
+}
